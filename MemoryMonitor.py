@@ -10,8 +10,19 @@ import queue
 import _thread,threading
 import datetime
 import multiprocessing
-
+from optparse import OptionParser
+import configparser
 global path
+
+def writeConfig(config_file_path, field, key, value):
+    cf = configparser.ConfigParser()
+    try:
+        cf.read(config_file_path)
+        cf.set(field, key, value)
+        cf.write(open(config_file_path,'w'))
+    except:
+        sys.exit(1)
+    return True
 
 def Memory_Record(process,pid):
 
@@ -67,17 +78,48 @@ def System_Record():
 if __name__ == '__main__':
 
     multiprocessing.freeze_support()
-    starttime = datetime.datetime.now()
+    strattime=datetime.datetime.now()
     # get config
     if getattr(sys, 'frozen', False):
         path = os.path.dirname(sys.executable)
     elif __file__:
         path = os.path.dirname(os.path.abspath(__file__))
     #configPath = os.path.join(path, "BVT.ini")
-
-
-    #path = os.getcwd()
+    #get config
     configPath = os.path.join(path, "MemoryMonitor.ini")
+    parser = OptionParser()
+    parser.add_option("-i", "--Interval",
+                      action="store",
+                      type='string',
+                      dest="Interval",
+                      default=None,
+                      help="Specify Interval"
+                      )
+    parser.add_option("-d", "--Duration",
+                      action="store",
+                      type='string',
+                      dest="Duration",
+                      default=None,
+                      help="Specify Duration"
+                      )
+    parser.add_option("-p", "--process",
+                      action="store",
+                      type='string',
+                      dest="process",
+                      default=None,
+                      help="Specify process"
+                      )
+                      
+    # update config
+    (options, args) = parser.parse_args()
+    if options.Interval != None:
+        writeConfig(configPath, "Time", "Interval", options.Interval)
+    if options.Duration != None:
+        writeConfig(configPath, "Time", "Duration", options.Duration)
+    if options.process != None:
+        writeConfig(configPath, "Process", "process", options.process)
+    #path = os.getcwd()
+    
     config = configparser.ConfigParser()
     config.read_file(open(configPath))
     Interval = config.getint("Time", "Interval")
@@ -107,7 +149,7 @@ if __name__ == '__main__':
         t.start()
     #t.join()
     while 1:
-        endtime = datetime.datetime.now()
-        if (endtime-starttime).total_seconds() > Duration*60*60:
+        endtime=datetime.datetime.now()
+        if (endtime-strattime).seconds > Duration*60*60:
             exit()
         time.sleep(Interval)
